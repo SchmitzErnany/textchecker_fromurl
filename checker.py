@@ -23,7 +23,9 @@ def check(args, input_lines):
     for line in tqdm(input_lines[:args.num_lines]):
         # setting up the query to the url address
         text_encoded = urllib.parse.quote(line)
-        query = raw_url(args) + '/?text=' + text_encoded
+        query = raw_url(args) + '/?text=' + text_encoded + args.additional_argument
+        if args.bar == 0:
+            query = raw_url(args) + '?text=' + text_encoded + args.additional_argument
         # making the request
         contents = urllib.request.urlopen(query).read()
         # converting the bytes object to json
@@ -62,7 +64,10 @@ def main(args):
     output_dataframe.to_csv(args.output_file_all, index=False, header=False, sep='\t', quoting=csv.QUOTE_NONE)
 
     # output only the paragraphs which have been corrected
-    mask_diff = output_dataframe['positive'] > 0
+    if bool(args.positive):
+        mask_diff = output_dataframe['positive'] > 0
+    else:
+        mask_diff = output_dataframe['positive'] == 0
     diff = output_dataframe[mask_diff]
     diff.to_csv(args.output_file_diff, index=False, header=False, sep='\t', quoting=csv.QUOTE_NONE)
     
@@ -92,6 +97,18 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument('--num_lines',
                         help='number of lines to be checked',
+                        type=int)
+    parser.add_argument('--additional_argument',
+                        help='additional argument to the query',
+                        default='',
+                        type=str)
+    parser.add_argument('--bar',
+                        help='bar after the main url',
+                        default=1,
+                        type=int)
+    parser.add_argument('--positive',
+                        help='which kind of diff will be exported',
+                        default=1,
                         type=int)
     args = parser.parse_args()
     main(args)
